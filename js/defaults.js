@@ -110,7 +110,7 @@ const settingsChange$ = rxjs.fromEventPattern(
 
 function getSettings(names) {
   return new Promise(function(fulfill) {
-    brapi.storage.local.get(names || ["voiceName", "rate", "pitch", "volume", "showHighlighting", "languages", "highlightFontSize", "highlightWindowSize", "preferredVoices", "useEmbeddedPlayer", "fixBtSilenceGap", "wordReplacements", "darkMode"], fulfill);
+    brapi.storage.local.get(names || ["voiceName", "rate", "pitch", "volume", "showHighlighting", "languages", "highlightFontSize", "highlightWindowSize", "preferredVoices", "useEmbeddedPlayer", "fixBtSilenceGap", "wordReplacements", "darkMode", "languageProfiles", "activeLanguage"], fulfill);
   });
 }
 
@@ -122,7 +122,7 @@ function updateSettings(items) {
 
 function clearSettings(names) {
   return new Promise(function(fulfill) {
-    brapi.storage.local.remove(names || ["voiceName", "rate", "pitch", "volume", "showHighlighting", "languages", "highlightFontSize", "highlightWindowSize", "preferredVoices", "useEmbeddedPlayer", "fixBtSilenceGap", "wordReplacements", "darkMode"], fulfill);
+    brapi.storage.local.remove(names || ["voiceName", "rate", "pitch", "volume", "showHighlighting", "languages", "highlightFontSize", "highlightWindowSize", "preferredVoices", "useEmbeddedPlayer", "fixBtSilenceGap", "wordReplacements", "darkMode", "languageProfiles", "activeLanguage"], fulfill);
   });
 }
 
@@ -312,6 +312,28 @@ function isNativeVoice(voice) {
 
 function isPremiumVoice(voice) {
   return isAmazonCloud(voice) || isMicrosoftCloud(voice) || isRHVoice(voice)
+}
+
+//languageProfiles: [{lang: "da", voiceName: "Microsoft Christel"}], voiceName "" means auto select
+function normalizeLanguageProfiles(value) {
+  if (!Array.isArray(value)) return []
+  const seen = new Set()
+  return value.filter(profile => {
+    if (!profile || typeof profile.lang != "string" || !profile.lang || seen.has(profile.lang)) return false
+    seen.add(profile.lang)
+    return true
+  }).map(profile => ({lang: profile.lang, voiceName: profile.voiceName || ""}))
+}
+
+function getActiveLanguageProfile(settings) {
+  if (!settings.activeLanguage) return null
+  return normalizeLanguageProfiles(settings.languageProfiles)
+    .find(profile => profile.lang == settings.activeLanguage) || null
+}
+
+function getLanguageDisplayName(code) {
+  try { return new Intl.DisplayNames([brapi.i18n.getUILanguage()], {type: "language"}).of(code) || code }
+  catch { return code }
 }
 
 async function getSpeechVoice(voiceName, lang) {

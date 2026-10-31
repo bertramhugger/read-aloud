@@ -358,3 +358,26 @@ input[type=checkbox] + label {
 .dark-mode .setting-info-button[aria-expanded="true"] { background: #373d45; }
 .dark-mode .setting-info-popup { background: #323232; color: #ddd; border-color: #505050; }
 .dark-mode .setting-info-popup a { color: #a8bcff; }
+
+#language-profiles {
+  margin-top: 1.5rem;
+}
+#language-profiles h5 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+.language-profile-row {
+  display: grid;
+  grid-template-columns: 10rem 1fr auto;
+  gap: 8px;
+  align-items: center;
+  margin-top: .5rem;
+}
+.language-profile-row .form-control {
+  min-width: 0;
+}
+.language-profile-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

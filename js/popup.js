@@ -105,6 +105,7 @@ async function init() {
   }).observe(footer)
   refreshSize();
   checkAnnouncements();
+  initLanguageSwitcher();
 
   const {state} = await bgPageInvoke("getPlaybackState")
   if (state == "PAUSED" || state == "STOPPED") onPlay()
@@ -438,6 +439,34 @@ function showAnnouncement(ann) {
     $("#footer a").click(function() {
       ann.disabled = true;
       updateSettings({announcement: ann});
+    })
+}
+
+function initLanguageSwitcher() {
+  const select = $("#active-language")
+  const label = brapi.i18n.getMessage("popup_language_label") || "Reading language"
+  select.attr({title: label, "aria-label": label})
+    .change(async function() {
+      await updateSettings({activeLanguage: $(this).val()})
+      //restart so the new language takes effect right away
+      const {state} = await bgPageInvoke("getPlaybackState")
+      if (state != "STOPPED") {
+        await bgPageInvoke("stop")
+        onPlay()
+      }
+    })
+  rxjs.combineLatest([observeSetting("languageProfiles"), observeSetting("activeLanguage")])
+    .subscribe(([languageProfiles, activeLanguage]) => {
+      const profiles = normalizeLanguageProfiles(languageProfiles)
+      $("#language-switcher").prop("hidden", !profiles.length)
+      select.empty()
+      $("<option>").val("").text(brapi.i18n.getMessage("popup_language_auto") || "Auto detect language").appendTo(select)
+      for (const profile of profiles) {
+        $("<option>").val(profile.lang)
+          .text(getLanguageDisplayName(profile.lang) + (profile.voiceName ? " · " + profile.voiceName : ""))
+          .appendTo(select)
+      }
+      select.val(profiles.some(p => p.lang == activeLanguage) ? activeLanguage : "")
     })
 }
 

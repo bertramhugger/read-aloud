@@ -121,6 +121,28 @@
 
 
 
+  //languageProfiles
+  domReadyPromise
+    .then(() => {
+      $("#new-profile-lang")
+        .change(function() {
+          voices$.pipe(rxjs.take(1)).subscribe(voices => populateProfileVoices($("#new-profile-voice"), voices, $(this).val()))
+        })
+      $("#add-language-profile")
+        .click(async function() {
+          const lang = $("#new-profile-lang").val()
+          if (!lang) return
+          const profiles = normalizeLanguageProfiles(await getSetting("languageProfiles"))
+          profiles.push({lang, voiceName: $("#new-profile-voice").val() || ""})
+          updateSettings({languageProfiles: profiles})
+        })
+    })
+
+  rxjs.combineLatest([voices$, observeSetting("languageProfiles"), domReadyPromise])
+    .subscribe(([voices, languageProfiles]) => populateLanguageProfiles(voices, normalizeLanguageProfiles(languageProfiles)))
+
+
+
   //rate
   const rateSliderPromise = domReadyPromise
     .then(() => {
@@ -312,7 +334,7 @@
       // Playback state, reader preferences, and voice discovery also write to
       // storage. Only changes to speech settings should interrupt playback.
       if (Object.keys(changes).some(key =>
-        (["voiceName", "pitch", "volume", "wordReplacements", "preferredVoices"].includes(key)
+        (["voiceName", "pitch", "volume", "wordReplacements", "preferredVoices", "languageProfiles"].includes(key)
           || key.startsWith("rate"))
         && JSON.stringify(changes[key].oldValue) != JSON.stringify(changes[key].newValue)
       )) {
@@ -452,6 +474,54 @@
       .val("@custom")
       .text(brapi.i18n.getMessage("options_enable_custom_voices"))
       .appendTo(additional)
+  }
+
+  function populateLanguageProfiles(voices, profiles) {
+    const voicesByLang = groupVoicesByLang(voices)
+    const list = $("#language-profile-list").empty()
+    for (const profile of profiles) {
+      const row = $("<div>").addClass("language-profile-row").appendTo(list)
+      $("<span>").addClass("language-profile-name").text(getLanguageDisplayName(profile.lang)).appendTo(row)
+      const select = $("<select>").addClass("form-control").appendTo(row)
+      populateProfileVoices(select, voices, profile.lang)
+      select.val(profile.voiceName)
+        .change(() => updateProfile(profile.lang, p => ({...p, voiceName: select.val()})))
+      const label = brapi.i18n.getMessage("options_language_profiles_remove") || "Remove"
+      $("<button>").attr({type: "button", title: label, "aria-label": label})
+        .addClass("btn btn-sm btn-light")
+        .html('<i class="material-icons" aria-hidden="true"><svg><use href="img/icons.svg#delete_outline"/></svg></i>')
+        .click(() => updateProfile(profile.lang, () => null))
+        .appendTo(row)
+    }
+
+    const taken = new Set(profiles.map(p => p.lang))
+    const langs = Object.keys(voicesByLang)
+      .filter(lang => lang != "<any>" && !taken.has(lang))
+      .map(lang => ({lang, name: getLanguageDisplayName(lang)}))
+      .sort((a, b) => a.name.localeCompare(b.name))
+    const langSelect = $("#new-profile-lang").empty()
+    for (const {lang, name} of langs) $("<option>").val(lang).text(name).appendTo(langSelect)
+    $("#new-language-profile").toggle(langs.length > 0)
+    populateProfileVoices($("#new-profile-voice"), voices, langSelect.val())
+  }
+
+  function populateProfileVoices(select, voices, lang) {
+    select.empty()
+    $("<option>").val("").text("Auto select").appendTo(select)
+    if (!lang) return
+    const voicesByLang = groupVoicesByLang(voices)
+    for (const voice of (voicesByLang[lang] || []).concat(voicesByLang["<any>"] || []).sort(voiceSorter)) {
+      $("<option>").val(voice.voiceName).text(voice.voiceName).appendTo(select)
+    }
+  }
+
+  async function updateProfile(lang, update) {
+    const profiles = normalizeLanguageProfiles(await getSetting("languageProfiles"))
+      .map(p => p.lang == lang ? update(p) : p)
+      .filter(Boolean)
+    const items = {languageProfiles: profiles}
+    if (!profiles.some(p => p.lang == lang) && await getSetting("activeLanguage") == lang) items.activeLanguage = ""
+    await updateSettings(items)
   }
 
   function canEnableGoogleNaturalVoices() {

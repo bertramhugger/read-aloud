@@ -312,8 +312,12 @@ function Doc(source, onEnd) {
 
   async function getSpeech(texts) {
     const settings = await getSettings()
+    //a language picked in the popup overrides both the detected language and the global voice
+    const profile = getActiveLanguageProfile(settings)
+    if (profile) settings.voiceName = profile.voiceName
     settings.rate = await getSetting("rate" + (settings.voiceName || ""))
-    var lang = (!info.detectedLang || info.lang && info.lang.startsWith(info.detectedLang)) ? info.lang : info.detectedLang;
+    var lang = profile ? profile.lang
+      : (!info.detectedLang || info.lang && info.lang.startsWith(info.detectedLang)) ? info.lang : info.detectedLang;
     console.log("Declared", info.lang, "- Detected", info.detectedLang, "- Chosen", lang)
     var options = {
       rate: settings.rate || defaults.rate,
