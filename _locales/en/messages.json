@@ -436,5 +436,23 @@
   },
   "playback_status_toggle_dark_mode": {
     "message": "Toggle dark mode"
+  },
+  "options_language_profiles_heading": {
+    "message": "Languages"
+  },
+  "options_language_profiles_hint": {
+    "message": "Add the languages you read and pick a voice for each. Switch between them from the main menu."
+  },
+  "options_language_profiles_add": {
+    "message": "Add language"
+  },
+  "options_language_profiles_remove": {
+    "message": "Remove language"
+  },
+  "popup_language_label": {
+    "message": "Reading language"
+  },
+  "popup_language_auto": {
+    "message": "Auto detect language"
   }
 }

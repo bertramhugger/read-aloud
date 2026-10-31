@@ -276,3 +276,30 @@ body:not(.is-popup) #highlight {
 body:not(.has-highlight) #toggle-reading-controls,
 body:not(.has-highlight) #toolbar { display: none; }
 body:not(.has-highlight) #playback-status summary { padding-right: 0; }
+
+#language-switcher {
+  margin-top: 8px;
+  text-align: center;
+}
+#language-switcher[hidden] {
+  display: none;
+}
+body.is-stopped #language-switcher {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+#active-language {
+  max-width: 100%;
+  padding: 3px 6px;
+  border: 1px solid lightgray;
+  border-radius: 5px;
+  background-color: white;
+  color: inherit;
+  font: inherit;
+  font-size: .85em;
+}
+.dark-mode #active-language {
+  background-color: #333;
+  border-color: #555;
+  color: #d0d0d0;
+}
